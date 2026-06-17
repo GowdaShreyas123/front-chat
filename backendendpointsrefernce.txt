@@ -1,0 +1,187 @@
+    # API Integration Flowchart & Endpoints
+
+This document provides a visual flowchart and a detailed reference table to help you seamlessly integrate your backend APIs into your frontend application.
+
+## Backend Endpoints Reference
+
+### 1. Authentication Endpoints
+
+#### `POST /api/v1/auth/register` (🔓 Public)
+- **Purpose**: Create a new user account.
+- **Request Body**:
+  ```json
+  {
+    "name": "string (min 2 chars)",
+    "email": "string (valid email)",
+    "password": "string (min 8 chars)"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "User registered successfully",
+    "data": { 
+      "user": { "id": "...", "name": "...", "email": "..." }, 
+      "accessToken": "...", 
+      "refreshToken": "..." 
+    }
+  }
+  ```
+
+#### `POST /api/v1/auth/login` (🔓 Public)
+- **Purpose**: Authenticate a user.
+- **Request Body**:
+  ```json
+  {
+    "email": "string (valid email)",
+    "password": "string"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Login successful",
+    "data": { 
+      "user": { "id": "...", "name": "...", "email": "..." }, 
+      "accessToken": "...", 
+      "refreshToken": "..." 
+    }
+  }
+  ```
+
+#### `GET /api/v1/auth/me` (🔒 Protected)
+- **Purpose**: Fetch current user's profile.
+- **Request**: No body. Requires `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Profile fetched successfully",
+    "data": { "user": { "id": "...", "name": "...", "email": "..." } }
+  }
+  ```
+
+#### `POST /api/v1/auth/refresh` (🔓 Public*)
+- **Purpose**: Refresh access token using a valid refresh token.
+- **Request Body**:
+  ```json
+  {
+    "refreshToken": "string"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Token refreshed successfully",
+    "data": { "accessToken": "...", "refreshToken": "..." }
+  }
+  ```
+
+#### `POST /api/v1/auth/logout` (🔒 Protected)
+- **Purpose**: Log the user out and invalidate tokens.
+- **Request**: No body. Requires `Authorization: Bearer <token>`
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Logged out successfully"
+  }
+  ```
+
+### 2. Chat Endpoints
+
+#### `POST /api/v1/chats/` (🔒 Protected)
+- **Purpose**: Create a new chat session.
+- **Request Body**:
+  ```json
+  {
+    "title": "string (optional, max 120 chars)"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Chat created successfully",
+    "data": { 
+      "chat": { "_id": "...", "title": "...", "userId": "...", "createdAt": "..." } 
+    }
+  }
+  ```
+
+#### `GET /api/v1/chats/` (🔒 Protected)
+- **Purpose**: Fetch all user chats.
+- **Request Query**: `?page=1&limit=20` (defaults to page 1, 20 items)
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Chats fetched successfully",
+    "data": { "chats": [ { "_id": "...", "title": "..." } ] }
+  }
+  ```
+
+#### `GET /api/v1/chats/:chatId` (🔒 Protected)
+- **Purpose**: Fetch details of a specific chat.
+- **Request Params**: `chatId` (24-char string) in URL.
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Chat fetched successfully",
+    "data": { 
+      "chat": { "_id": "...", "title": "...", "messages": [...] } 
+    }
+  }
+  ```
+
+#### `DELETE /api/v1/chats/:chatId` (🔒 Protected)
+- **Purpose**: Delete a specific chat session.
+- **Request Params**: `chatId` (24-char string) in URL.
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Chat deleted successfully"
+  }
+  ```
+
+### 3. Message Endpoints
+
+#### `POST /api/v1/messages/:chatId` (🔒 Protected)
+- **Purpose**: Send a new message to a chat.
+- **Request Params**: `chatId` (24-char string) in URL.
+- **Request Body**:
+  ```json
+  {
+    "content": "string (max 12000 chars)",
+    "imageUrl": "string (valid URL, optional)"
+  }
+  ```
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Message sent successfully",
+    "data": { "_id": "...", "chatId": "...", "content": "...", "role": "user", "createdAt": "..." } 
+  }
+  ```
+
+#### `GET /api/v1/messages/:chatId` (🔒 Protected)
+- **Purpose**: Fetch message history.
+- **Request Params**: `chatId` (24-char string) in URL.
+- **Request Query**: `?page=1&limit=50` (defaults to page 1, 50 items)
+- **Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Chat history fetched successfully",
+    "data": { "messages": [...], "pagination": {...} }
+  }
+  ```
+
+> [!NOTE] 
+> **Authentication Token Handling:** Your frontend should store the token (e.g., in localStorage or cookies). On every protected API call, pass the token via the `Authorization: Bearer <token>` header. If a 401 error occurs, call the `/refresh` endpoint, update the stored token, and retry the failed request.
